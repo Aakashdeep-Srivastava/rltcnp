@@ -1,0 +1,305 @@
+{% extends "base.html" %} {% block title %}Documentation - RTL Combinational
+Depth Predictor{% endblock %} {% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <h1 class="mb-4">Documentation</h1>
+
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Web Interface Usage</h5>
+      </div>
+      <div class="card-body">
+        <h5>Step 1: Upload RTL File</h5>
+        <p>
+          Upload a Verilog (.v) or SystemVerilog (.sv) file containing the RTL
+          design you want to analyze.
+        </p>
+        <div class="alert alert-info">
+          <strong>Note:</strong> The tool currently supports single-module RTL
+          files. For multi-module designs, analyze each module separately.
+        </div>
+
+        <h5>Step 2: Select Signal</h5>
+        <p>
+          After uploading, you'll see a dropdown list of all signals found in
+          the RTL file. Select the signal for which you want to predict the
+          combinational depth.
+        </p>
+
+        <h5>Step 3: Predict Depth</h5>
+        <p>
+          Click the "Predict Depth" button to run the prediction. The tool will
+          extract features from the RTL code and use the machine learning model
+          to predict the combinational depth.
+        </p>
+
+        <h5>Step 4: View Results</h5>
+        <p>The results will show:</p>
+        <ul>
+          <li>The predicted combinational depth</li>
+          <li>The extracted features used for prediction</li>
+          <li>A feature importance visualization (for Random Forest model)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- UI Screenshots Section -->
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">User Interface Guide</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="card h-100">
+              <div class="card-header bg-light">
+                <h5 class="card-title text-center mb-0">Upload Screen</h5>
+              </div>
+              <div class="card-body">
+                <p>
+                  <strong>Step 1:</strong> On the home page, you'll find an
+                  upload form.
+                </p>
+                <p>
+                  <strong>Step 2:</strong> Click the "Choose File" button to
+                  select your Verilog (.v) or SystemVerilog (.sv) file.
+                </p>
+                <p>
+                  <strong>Step 3:</strong> Click the "Upload" button to process
+                  the file.
+                </p>
+                <p class="text-muted mt-3">
+                  The system will parse your RTL file and extract all available
+                  signals.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card h-100">
+              <div class="card-header bg-light">
+                <h5 class="card-title text-center mb-0">Signal Selection</h5>
+              </div>
+              <div class="card-body">
+                <p>
+                  <strong>Step 1:</strong> After uploading, a dropdown menu will
+                  appear.
+                </p>
+                <p>
+                  <strong>Step 2:</strong> Select the signal you want to analyze
+                  from the dropdown list.
+                </p>
+                <p>
+                  <strong>Step 3:</strong> Click the "Predict Depth" button to
+                  run the analysis.
+                </p>
+                <p class="text-muted mt-3">
+                  The system will extract features from your selected signal and
+                  feed them to the machine learning model.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card h-100">
+              <div class="card-header bg-light">
+                <h5 class="card-title text-center mb-0">Results View</h5>
+              </div>
+              <div class="card-body">
+                <p>
+                  <strong>Step 1:</strong> The prediction results will appear in
+                  a new card.
+                </p>
+                <p>
+                  <strong>Step 2:</strong> You'll see the predicted
+                  combinational depth value.
+                </p>
+                <p>
+                  <strong>Step 3:</strong> Below the prediction, you'll find a
+                  table of extracted features.
+                </p>
+                <p>
+                  <strong>Step 4:</strong> For Random Forest models, a feature
+                  importance visualization will be displayed.
+                </p>
+                <p class="text-muted mt-3">
+                  Use these results to identify potential timing issues in your
+                  RTL design.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sample RTL Files Section -->
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Sample RTL Files</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4">
+            <h5 class="text-center">Counter</h5>
+            <img
+              src="{{ url_for('static', filename='images/sample-counter.png') }}"
+              alt="Counter RTL"
+              class="sample-rtl-image"
+            />
+          </div>
+          <div class="col-md-4">
+            <h5 class="text-center">ALU</h5>
+            <img
+              src="{{ url_for('static', filename='images/sample-alu.png') }}"
+              alt="ALU RTL"
+              class="sample-rtl-image"
+            />
+          </div>
+          <div class="col-md-4">
+            <h5 class="text-center">FIFO Controller</h5>
+            <img
+              src="{{ url_for('static', filename='images/sample-fifo.png') }}"
+              alt="FIFO Controller RTL"
+              class="sample-rtl-image"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Command Line Usage</h5>
+      </div>
+      <div class="card-body">
+        {% if command_examples %} {% for example in command_examples %}
+        <h5>{{ example.name }}</h5>
+        <pre><code>{{ example.command }}</code></pre>
+        {% endfor %} {% else %}
+        <h5>Basic Usage</h5>
+        <pre><code>python run_pipeline.py --predict --rtl_file path/to/your/rtl_file.v --signal signal_name</code></pre>
+
+        <h5>Training the Model</h5>
+        <pre><code>python run_pipeline.py --train --compare_models</code></pre>
+
+        <h5>Evaluating the Model</h5>
+        <pre><code>python evaluate_model.py</code></pre>
+
+        <h5>Generating Visualizations</h5>
+        <pre><code>python visualize_results.py</code></pre>
+
+        <h5>Running Tests</h5>
+        <pre><code>python run_pipeline.py --test</code></pre>
+
+        <h5>Running the Complete Pipeline</h5>
+        <pre><code>bash run_all.sh</code></pre>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">API Documentation</h5>
+      </div>
+      <div class="card-body">
+        <h5>REST API Endpoints</h5>
+
+        {% if api_examples %} {% for api_name, api in api_examples.items() %}
+        <div class="mb-4">
+          <h6>{{ api_name|title }} {{ api.url }}</h6>
+          <p><strong>URL:</strong> <code>{{ api.url }}</code></p>
+          <p><strong>Method:</strong> {{ api.method }}</p>
+          <p><strong>Content-Type:</strong> {{ api.content_type }}</p>
+
+          {% if api.params %}
+          <p><strong>Parameters:</strong></p>
+          <ul>
+            {% for param in api.params %}
+            <li><code>{{ param.name }}</code>: {{ param.description }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %} {% if api.request_body %}
+          <p><strong>Request Body:</strong></p>
+          <pre><code>{{ api.request_body|tojson(indent=4) }}</code></pre>
+          {% endif %}
+
+          <p><strong>Response:</strong></p>
+          <pre><code>{{ api.response|tojson(indent=4) }}</code></pre>
+        </div>
+        {% endfor %} {% else %}
+        <div class="mb-4">
+          <h6>Upload RTL File</h6>
+          <p><strong>URL:</strong> <code>/upload</code></p>
+          <p><strong>Method:</strong> POST</p>
+          <p><strong>Content-Type:</strong> multipart/form-data</p>
+          <p><strong>Parameters:</strong></p>
+          <ul>
+            <li><code>file</code>: The RTL file to upload (.v or .sv)</li>
+          </ul>
+          <p><strong>Response:</strong></p>
+          <pre><code>{
+    "success": true,
+    "signals": ["signal1", "signal2", ...],
+    "filename": "uploaded_file.v"
+}</code></pre>
+        </div>
+
+        <div class="mb-4">
+          <h6>Predict Depth</h6>
+          <p><strong>URL:</strong> <code>/predict</code></p>
+          <p><strong>Method:</strong> POST</p>
+          <p><strong>Content-Type:</strong> application/json</p>
+          <p><strong>Request Body:</strong></p>
+          <pre><code>{
+    "filename": "uploaded_file.v",
+    "signal": "signal_name"
+}</code></pre>
+          <p><strong>Response:</strong></p>
+          <pre><code>{
+    "success": true,
+    "predicted_depth": 5.67,
+    "features": {
+        "fan_in": 10,
+        "operators_count": 5,
+        "conditional_count": 1,
+        "arithmetic_ops": 0,
+        "logical_ops": 4,
+        "comparison_ops": 1,
+        "mux_count": 1
+    },
+    "feature_importance": "uploaded_file.v_signal_name_importance.png"
+}</code></pre>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Limitations</h5>
+      </div>
+      <div class="card-body">
+        <ul>
+          <li>
+            The tool currently supports single-module RTL files. For
+            multi-module designs, analyze each module separately.
+          </li>
+          <li>
+            Very high combinational depths (>15) are still challenging to
+            predict with high accuracy.
+          </li>
+          <li>
+            Different synthesis tools may produce different combinational depths
+            for the same RTL code.
+          </li>
+          <li>
+            Complex timing paths that involve multiple modules and clock domains
+            are difficult to model.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

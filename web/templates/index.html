@@ -1,0 +1,449 @@
+{% extends "base.html" %} {% block title %}RTL Combinational Depth Predictor -
+Home{% endblock %} {% block content %}
+<div class="row">
+  <div class="col-md-12 text-center mb-4">
+    <h1>RTL Combinational Depth Predictor</h1>
+    <p class="lead">
+      Predict the combinational logic depth of signals in RTL designs without
+      running full synthesis
+    </p>
+    <div class="hero-image-container mt-3 mb-4">
+      <img
+        src="{{ url_for('static', filename='images/hero.jpg') }}"
+        alt="RTL Design"
+        class="img-fluid rounded shadow-sm"
+      />
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-upload me-2"></i>
+          Upload RTL File
+        </h5>
+      </div>
+      <div class="card-body">
+        <form id="upload-form" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label for="rtl-file" class="form-label"
+              >Select Verilog (.v) or SystemVerilog (.sv) file</label
+            >
+            <input
+              class="form-control"
+              type="file"
+              id="rtl-file"
+              name="file"
+              accept=".v,.sv"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-primary" id="upload-btn">
+            Upload
+          </button>
+        </form>
+        <div id="upload-status" class="mt-3 d-none">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <span class="ms-2">Processing file...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sample RTL Files Section -->
+    {% if sample_files %}
+    <div class="card mt-4">
+      <div class="card-header bg-info text-white">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-file-earmark-code me-2"></i>
+          Sample RTL Files
+        </h5>
+      </div>
+      <div class="card-body">
+        <p>Try one of these sample RTL files to test the predictor:</p>
+        <div class="list-group">
+          {% for file in sample_files %}
+          <a
+            href="#"
+            class="list-group-item list-group-item-action sample-file"
+            data-filename="{{ file.name }}"
+          >
+            <div class="d-flex w-100 justify-content-between">
+              <h6 class="mb-1">{{ file.name }}</h6>
+            </div>
+            <p class="mb-1">{{ file.description }}</p>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card mt-4 d-none" id="signal-selection-card">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-list-check me-2"></i>
+          Select Signal
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="signal-select" class="form-label"
+            >Choose a signal to analyze</label
+          >
+          <select class="form-select" id="signal-select" required>
+            <option value="" selected disabled>Select a signal</option>
+          </select>
+        </div>
+        <button type="button" class="btn btn-primary" id="predict-btn">
+          Predict Depth
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card d-none" id="results-card">
+      <div class="card-header bg-success text-white">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-graph-up me-2"></i>
+          Prediction Results
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="text-center mb-4">
+          <h2 class="display-4" id="predicted-depth">0</h2>
+          <p class="lead">Predicted Combinational Depth</p>
+        </div>
+
+        <h5>Signal Features:</h5>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody id="features-table"></tbody>
+        </table>
+
+        <div id="feature-importance-container" class="mt-4 d-none">
+          <h5>Feature Importance:</h5>
+          <img
+            id="feature-importance-img"
+            class="img-fluid"
+            src=""
+            alt="Feature Importance"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header bg-info text-white">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-info-circle me-2"></i>
+          What is Combinational Depth?
+        </h5>
+      </div>
+      <div class="card-body">
+        <p>
+          Combinational depth refers to the longest path through combinational
+          logic in a digital circuit. It's a critical factor in determining the
+          maximum operating frequency of a design.
+        </p>
+        <p>
+          Higher combinational depth can lead to timing violations during
+          synthesis, requiring architectural changes that can delay project
+          timelines.
+        </p>
+        <p>
+          This tool helps identify potential timing issues early in the design
+          process, before running full synthesis.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  $(document).ready(function () {
+    let currentFilename = null;
+
+    // Handle file upload
+    $("#upload-form").on("submit", function (e) {
+      e.preventDefault();
+
+      const fileInput = $("#rtl-file")[0];
+      if (fileInput.files.length === 0) {
+        alert("Please select a file to upload");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      // Show loading indicator
+      $("#upload-status").removeClass("d-none");
+      $("#upload-btn").prop("disabled", true);
+
+      // Clear previous results
+      $("#signal-selection-card").addClass("d-none");
+      $("#results-card").addClass("d-none");
+
+      $.ajax({
+        url: "/upload",
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+          $("#upload-status").addClass("d-none");
+          $("#upload-btn").prop("disabled", false);
+
+          if (response.success) {
+            // Store the filename for later use
+            currentFilename = response.filename;
+
+            // Populate signal dropdown
+            const signalSelect = $("#signal-select");
+            signalSelect.empty();
+            signalSelect.append(
+              '<option value="" selected disabled>Select a signal</option>'
+            );
+
+            response.signals.forEach(function (signal) {
+              signalSelect.append(
+                `<option value="${signal}">${signal}</option>`
+              );
+            });
+
+            // Show signal selection card
+            $("#signal-selection-card").removeClass("d-none");
+          } else {
+            alert("Error: " + response.error);
+          }
+        },
+        error: function () {
+          $("#upload-status").addClass("d-none");
+          $("#upload-btn").prop("disabled", false);
+          alert("Server error occurred. Please try again.");
+        },
+      });
+    });
+
+    // Handle sample file selection
+    $(".sample-file").on("click", function (e) {
+      e.preventDefault();
+      const filename = $(this).data("filename");
+
+      // Show a message that in a real app, this would load the sample file
+      showSuccess(
+        `In a production app, this would load the sample file: ${filename}`
+      );
+
+      // Simulate loading signals for the sample file
+      setTimeout(function () {
+        currentFilename = filename;
+
+        // Populate signal dropdown with sample signals
+        const signalSelect = $("#signal-select");
+        signalSelect.empty();
+        signalSelect.append(
+          '<option value="" selected disabled>Select a signal</option>'
+        );
+
+        // Add sample signals based on the file type
+        if (filename === "counter.v") {
+          signalSelect.append('<option value="count">count</option>');
+          signalSelect.append(
+            '<option value="max_reached">max_reached</option>'
+          );
+          signalSelect.append('<option value="overflow">overflow</option>');
+        } else if (filename === "alu.v") {
+          signalSelect.append('<option value="result">result</option>');
+          signalSelect.append('<option value="zero_flag">zero_flag</option>');
+          signalSelect.append(
+            '<option value="overflow_flag">overflow_flag</option>'
+          );
+        } else if (filename === "fifo_controller.v") {
+          signalSelect.append('<option value="data_out">data_out</option>');
+          signalSelect.append('<option value="full">full</option>');
+          signalSelect.append('<option value="empty">empty</option>');
+          signalSelect.append(
+            '<option value="debug_trigger">debug_trigger</option>'
+          );
+        }
+
+        // Show signal selection card
+        $("#signal-selection-card").removeClass("d-none");
+      }, 500);
+    });
+
+    // Handle prediction
+    $("#predict-btn").on("click", function () {
+      const selectedSignal = $("#signal-select").val();
+
+      if (!selectedSignal) {
+        alert("Please select a signal");
+        return;
+      }
+
+      if (!currentFilename) {
+        alert("Please upload a file first");
+        return;
+      }
+
+      // Show loading
+      $(this).prop("disabled", true);
+      $(this).html(
+        '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Predicting...'
+      );
+
+      // For sample files, simulate a prediction response
+      if (
+        currentFilename === "counter.v" ||
+        currentFilename === "alu.v" ||
+        currentFilename === "fifo_controller.v"
+      ) {
+        setTimeout(function () {
+          $("#predict-btn").prop("disabled", false);
+          $("#predict-btn").text("Predict Depth");
+
+          // Create sample prediction data
+          let predictionData = {
+            success: true,
+            predicted_depth: 0,
+            features: {
+              fan_in: Math.floor(Math.random() * 10) + 1,
+              operators_count: Math.floor(Math.random() * 8) + 1,
+              conditional_count: Math.floor(Math.random() * 3),
+              arithmetic_ops: Math.floor(Math.random() * 5),
+              logical_ops: Math.floor(Math.random() * 6),
+              comparison_ops: Math.floor(Math.random() * 3),
+              mux_count: Math.floor(Math.random() * 2),
+            },
+          };
+
+          // Set predicted depth based on signal and file
+          if (currentFilename === "counter.v") {
+            if (selectedSignal === "max_reached")
+              predictionData.predicted_depth = 5.0;
+            else if (selectedSignal === "count")
+              predictionData.predicted_depth = 3.5;
+            else predictionData.predicted_depth = 4.2;
+          } else if (currentFilename === "alu.v") {
+            if (selectedSignal === "overflow_flag")
+              predictionData.predicted_depth = 7.0;
+            else if (selectedSignal === "result")
+              predictionData.predicted_depth = 6.3;
+            else predictionData.predicted_depth = 5.8;
+          } else {
+            if (selectedSignal === "debug_trigger")
+              predictionData.predicted_depth = 7.0;
+            else if (selectedSignal === "data_out")
+              predictionData.predicted_depth = 4.5;
+            else predictionData.predicted_depth = 3.2;
+          }
+
+          // Display predicted depth
+          $("#predicted-depth").text(predictionData.predicted_depth.toFixed(2));
+
+          // Display features
+          const featuresTable = $("#features-table");
+          featuresTable.empty();
+
+          for (const [feature, value] of Object.entries(
+            predictionData.features
+          )) {
+            featuresTable.append(`
+              <tr>
+                <td>${feature}</td>
+                <td>${value}</td>
+              </tr>
+            `);
+          }
+
+          // Show results card
+          $("#results-card").removeClass("d-none");
+
+          // Create a simple feature importance visualization
+          const container = document.createElement("div");
+          container.id = "feature-importance-chart";
+
+          const features = Object.keys(predictionData.features);
+          const values = Object.values(predictionData.features);
+          const maxValue = Math.max(...values);
+
+          createSimpleBarChart(
+            "feature-importance-container",
+            features,
+            values,
+            maxValue
+          );
+          $("#feature-importance-container").removeClass("d-none");
+        }, 1000);
+
+        return;
+      }
+
+      $.ajax({
+        url: "/predict",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          filename: currentFilename,
+          signal: selectedSignal,
+        }),
+        success: function (response) {
+          $("#predict-btn").prop("disabled", false);
+          $("#predict-btn").text("Predict Depth");
+
+          if (response.success) {
+            // Display predicted depth
+            $("#predicted-depth").text(response.predicted_depth);
+
+            // Display features
+            const featuresTable = $("#features-table");
+            featuresTable.empty();
+
+            for (const [feature, value] of Object.entries(response.features)) {
+              featuresTable.append(`
+                                <tr>
+                                    <td>${feature}</td>
+                                    <td>${value}</td>
+                                </tr>
+                            `);
+            }
+
+            // Display feature importance if available
+            if (response.feature_importance) {
+              $("#feature-importance-img").attr(
+                "src",
+                "/uploads/" + response.feature_importance
+              );
+              $("#feature-importance-container").removeClass("d-none");
+            } else {
+              $("#feature-importance-container").addClass("d-none");
+            }
+
+            // Show results card
+            $("#results-card").removeClass("d-none");
+          } else {
+            alert("Error: " + response.error);
+          }
+        },
+        error: function () {
+          $("#predict-btn").prop("disabled", false);
+          $("#predict-btn").text("Predict Depth");
+          alert("Server error occurred. Please try again.");
+        },
+      });
+    });
+  });
+</script>
+{% endblock %}

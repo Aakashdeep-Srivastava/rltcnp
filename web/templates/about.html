@@ -1,0 +1,238 @@
+{% extends "base.html" %} {% block title %}About - RTL Combinational Depth
+Predictor{% endblock %} {% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <h1 class="mb-4">About the Project</h1>
+
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Project Overview</h5>
+      </div>
+      <div class="card-body">
+        <p>
+          The RTL Combinational Depth Predictor is an AI-based tool designed to
+          predict the combinational logic depth of signals in RTL designs
+          without running full synthesis. This helps identify potential timing
+          violations early in the design process, reducing overall project
+          execution time.
+        </p>
+
+        <p>
+          Timing analysis is a crucial step in the design of any complex IP/SoC.
+          However, timing analysis reports are generated after synthesis is
+          complete, which is a very time-consuming process. This leads to
+          overall delays in project execution time as timing violations can
+          require architectural refactoring.
+        </p>
+
+        <p>
+          By using machine learning to predict combinational depth, designers
+          can identify potential timing issues much earlier in the design flow,
+          allowing for architectural changes before investing time in synthesis.
+        </p>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">How It Works</h5>
+      </div>
+      <div class="card-body">
+        <h5>Feature Extraction</h5>
+        <p>
+          The tool extracts relevant features from RTL code that influence
+          combinational depth, including:
+        </p>
+        <ul>
+          <li>
+            <strong>Fan-in:</strong> Number of signals that directly affect the
+            target signal
+          </li>
+          <li>
+            <strong>Operator count:</strong> Total number of operators used in
+            expressions
+          </li>
+          <li>
+            <strong>Conditional count:</strong> Number of conditional statements
+            (if/else, case)
+          </li>
+          <li>
+            <strong>Arithmetic operations:</strong> Count of arithmetic
+            operators (+, -, *, /, etc.)
+          </li>
+          <li>
+            <strong>Logical operations:</strong> Count of logical operators (&,
+            |, ^, ~, etc.)
+          </li>
+          <li>
+            <strong>Comparison operations:</strong> Count of comparison
+            operators (==, !=, <, >, etc.)
+          </li>
+          <li>
+            <strong>Multiplexer count:</strong> Number of multiplexers affecting
+            the signal
+          </li>
+        </ul>
+
+        <h5>Machine Learning Model</h5>
+        <p>
+          The extracted features are fed into a Random Forest Regressor model,
+          which has been trained on a diverse dataset of RTL modules with known
+          combinational depths. The model predicts the combinational depth with
+          high accuracy:
+        </p>
+
+        {% if metrics %}
+        <div class="row mt-4">
+          <div class="col-md-6">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h3 class="display-5 text-primary">{{ metrics.mse }}</h3>
+                <p>Mean Squared Error (MSE)</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h3 class="display-5 text-primary">{{ metrics.mae }}</h3>
+                <p>Mean Absolute Error (MAE)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h3 class="display-5 text-primary">{{ metrics.r2 }}</h3>
+                <p>R² Score</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h3 class="display-5 text-primary">
+                  {{ metrics.accuracy_within_1 }}%
+                </h3>
+                <p>Predictions within ±1 depth level</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <ul>
+          <li><strong>Mean Squared Error (MSE):</strong> 0.7233</li>
+          <li><strong>Mean Absolute Error (MAE):</strong> 0.4910</li>
+          <li><strong>R² Score:</strong> 0.8375</li>
+          <li><strong>Predictions within ±1 depth level:</strong> 86.67%</li>
+        </ul>
+        {% endif %} {% if features %}
+        <h5 class="mt-4">Feature Importance</h5>
+        <div class="feature-importance-chart mt-3">
+          {% for feature in features %}
+          <div class="feature-bar">
+            <div class="feature-name">{{ feature.name }}</div>
+            <div class="feature-bar-container">
+              <div
+                class="feature-bar-fill"
+                data-width="{{ feature.importance }}"
+              ></div>
+              <div class="feature-value">
+                {{ (feature.importance * 100) | round(1) }}%
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Visualization Examples Section -->
+        <h5 class="mt-5">Visualization Examples</h5>
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <h6 class="text-center">Feature Importance</h6>
+            <img
+              src="{{ url_for('static', filename='images/viz-feature-importance.png') }}"
+              alt="Feature Importance Visualization"
+              class="viz-image"
+            />
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-center">Depth Prediction</h6>
+            <img
+              src="{{ url_for('static', filename='images/viz-depth-prediction.png') }}"
+              alt="Depth Prediction Visualization"
+              class="viz-image"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Developer Information</h5>
+      </div>
+      <div class="card-body">
+        <p><strong>Name:</strong> Janhavi Chavada</p>
+        <p><strong>Email:</strong> janhavichavada11@gmail.com</p>
+        <p>
+          <strong>GitHub:</strong>
+          <a href="https://github.com/hijanhv" target="_blank">hijanhv</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_css %}
+<style>
+  .feature-importance-chart {
+    margin: 20px 0;
+  }
+  .feature-bar {
+    display: flex;
+    margin-bottom: 10px;
+    align-items: center;
+  }
+  .feature-name {
+    width: 150px;
+    text-align: right;
+    padding-right: 10px;
+    font-size: 0.9rem;
+  }
+  .feature-bar-container {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    background-color: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+    height: 25px;
+  }
+  .feature-bar-fill {
+    height: 100%;
+    background-color: #0d6efd;
+    border-radius: 4px 0 0 4px;
+    width: 0; /* Default width */
+  }
+  .feature-value {
+    margin-left: 10px;
+    font-size: 0.8rem;
+    color: #666;
+    position: absolute;
+    margin-left: 10px;
+  }
+</style>
+{% endblock %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Set widths for feature bars based on data-width attribute
+    document.querySelectorAll(".feature-bar-fill").forEach(function (bar) {
+      const width = parseFloat(bar.getAttribute("data-width")) * 100;
+      bar.style.width = width + "%";
+    });
+  });
+</script>
+{% endblock %}
